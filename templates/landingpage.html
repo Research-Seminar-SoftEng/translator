@@ -46,35 +46,60 @@
   </nav>
   
 
-  <!-- Hero Section -->
-  <section
-    class="min-h-screen flex items-center justify-center text-center relative z-10 px-4 animate__fadeInRight animate__delay-8s"
-  >
-    <div class="glass-card p-8 rounded-lg max-w-2xl">
-      <h1 class="text-5xl font-bold mb-4 text-white">
-        Break Communication Barriers
-      </h1>
-      <p class="text-xl mb-8 text-gray-200">
-        Learn and interpret sign language in real-time with our AI-powered
-        platform.
-      </p>
-      <div class="space-x-4">
-        <a
-          href="#demo"
-          class="glass-bg inline-block px-6 py-3 rounded-lg hover-glow scroll-link"
-          
-        >
-          Try Demo
-        </a>
-        <a
-          href="#signup"
-          class="glass-bg inline-block px-6 py-3 rounded-lg hover-glow scroll-link"
-        >
-          Start Learning
-        </a>
-      </div>
-    </div>
-  </section>
+         <!-- Hero Section -->
+<section class="min-h-screen flex  items-center justify-between text-center relative z-10 px-40 gap-10">
+
+    <!-- Image Display with Transition -->
+    <div class="relative w-200 h-200 mx-auto mb-5 size-800">
+       <img id="changingImage" src="static/asset/hand1.png" alt="Sign Language Illustration" class="transition-opacity duration-1000 ease-in-out w-full h-full object-cover">
+   </div>
+
+   <div class="glass-card p-8 rounded-lg max-w-2xl">
+       <h1 class="text-5xl font-bold mb-4 text-white">Break Communication Barriers</h1>
+       <p class="text-xl mb-8 text-gray-200">Learn and interpret sign language in real-time with our web platform.</p>
+       <div class="space-x-4">
+           <a href="#demo" class="glass-bg inline-block px-6 py-3 rounded-lg hover-glow">
+               Try Demo
+           </a>
+           <a href="#signup" class="glass-bg inline-block px-6 py-3 rounded-lg hover-glow">
+               Start Learning
+           </a>
+       </div>
+   </div>
+</section>
+
+<!-- JavaScript for Image Transition -->
+<script>
+   // Array of SVG image paths
+   const images = [
+       "static/asset/hand1.png",
+       "static/asset/hand2.png",
+       "static/asset/hand3.png",
+       "static/asset/hand4.png",
+       "static/asset/hand5.png"
+   ];
+
+   let currentIndex = 0;
+   const imageElement = document.getElementById("changingImage");
+
+   function changeImage() {
+       imageElement.style.opacity = 0; // Start fade out
+       setTimeout(() => {
+           currentIndex = (currentIndex + 1) % images.length; // Cycle through images
+           imageElement.src = images[currentIndex]; // Change image source
+           imageElement.style.opacity = 1; // Fade back in
+       }, 1000); // Match the duration of CSS transition
+   }
+
+   setInterval(changeImage, 3000); // Change image every 3 seconds
+</script>
+
+<!-- TailwindCSS Styling for Smooth Transition -->
+<style>
+   #changingImage {
+       transition: opacity 1s ease-in-out;
+   }
+</style>
 
   <!-- Features Section -->
   <section id="features" class="py-16 relative z-10">
