@@ -1,35 +1,148 @@
 body {
-    background: #6a11cb;
-    background: -webkit-linear-gradient(to right, rgba(106, 17, 203, 1), rgba(37, 117, 252, 1));
-    background: linear-gradient(to right, rgba(106, 17, 203, 1), rgba(37, 117, 252, 1));
+  background: #6a11cb;
+  background: -webkit-linear-gradient(
+    to right,
+    rgba(106, 17, 203, 1),
+    rgba(37, 117, 252, 1)
+  );
+  background: linear-gradient(
+    to right,
+    rgba(106, 17, 203, 1),
+    rgba(37, 117, 252, 1)
+  );
 }
 
 #root {
-    width: 100vw;
-    height: 100vh;
+  width: 100vw;
 }
 
 /* Remove the outline from the video embed */
 #root video {
-    outline: none;
+  outline: none;
 }
 
 /* Style the "Back to Dashboard" button */
 .back-to-dashboard {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
 }
 
 .back-to-dashboard button {
-    padding: 10px 20px;
-    background-color: #ffffff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
+  padding: 10px 20px;
+  background-color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
-/* Hide any content that overflows the viewport */
+.glass-bg {
+  background: rgba(26, 57, 51, 0.6); /* Semi-transparent background */
+  backdrop-filter: blur(15px); /* Apply blur effect */
+  -webkit-backdrop-filter: blur(15px); /* For Safari compatibility */
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Light border for glass effect */
+}
+.gradient-text {
+  background: linear-gradient(45deg, #10b981, #059669);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.gradient-border {
+  border: 2px solid transparent;
+  border-image: linear-gradient(45deg, #10b981, #059669);
+  border-image-slice: 1;
+}
 body {
-    overflow: hidden;
+  background: linear-gradient(135deg, #111e27 0%, #144d2c 50%, #064e38 100%);
+  min-height: 100vh;
+  background-attachment: fixed;
+}
+.custom-button {
+  background: #10b981;
+  color: white;
+  transition: all 0.3s ease;
+}
+.custom-button:hover {
+  background: #059669;
+  transform: translateY(-2px);
+}
+.container-bg {
+  background: rgba(26, 57, 51, 0.7); /* Darker glass effect */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* For the Welcome Message */
+.welcome-message {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: white;
+  background: rgba(26, 57, 51, 0.6); /* Semi-transparent glass background */
+  padding: 10px;
+  border-radius: 10px;
+  backdrop-filter: blur(8px); /* Optional: more subtle blur effect */
+}
+.glass-bg {
+  background: rgba(26, 57, 51, 0.7); /* #1a3933 with opacity */
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-card {
+  background: rgba(26, 57, 51, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease-in-out;
+}
+
+.glass-card:hover {
+  box-shadow: 0 10px 50px rgba(20, 77, 44, 0.3);
+  background: rgba(26, 57, 51, 0.9);
+}
+
+/* Button Styling */
+.scroll-link {
+  background-color: rgba(26, 57, 51, 0.9);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  transition: all 0.3s ease;
+}
+
+.scroll-link:hover {
+  background-color: rgba(20, 77, 44, 0.9);
+  transform: translateY(-2px);
+}
+
+.hover-glow {
+  transition: all 0.3s ease;
+}
+
+.hover-glow:hover {
+  text-shadow: 0 0 10px rgba(20, 77, 44, 0.5);
+  transform: translateY(-2px);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+
+.embla {
+  overflow: hidden;
+}
+.embla__container {
+  display: flex;
+  gap: 1rem;
+}
+.embla__slide {
+  flex: 0 0 auto
+  min-width: 0;
 }

@@ -1,15 +1,23 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, EmailField
 from wtforms.validators import DataRequired, Length
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import login_user, LoginManager, login_required, current_user, logout_user
 
+from flask_bcrypt import Bcrypt
+
+
+
+
 
 db = SQLAlchemy()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "my-secrets"
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///video-meeting.db"
+
+# Initialize Bcrypt
+bcrypt = Bcrypt(app)
 db.init_app(app)
 
 login_manager = LoginManager()
@@ -59,7 +67,9 @@ class LoginForm(FlaskForm):
 
 @app.route("/")
 def home():
-    return redirect(url_for("login"))
+    return render_template('landingpage.html')
+
+
 
 
 @app.route("/login", methods=["POST", "GET"])
@@ -68,12 +78,34 @@ def login():
     if request.method == "POST" and form.validate_on_submit():
         email = form.email.data
         password = form.password.data
-        user = Register.query.filter_by(email=email, password=password).first()
+        user = Register.query.filter_by(email=email).first()
+
         if user:
-            login_user(user)
-            return redirect(url_for("dashboard"))
+            # Check if the hashed password matches the entered password
+            if bcrypt.check_password_hash(user.password, password):  # Use Bcrypt's check
+                login_user(user)
+                return jsonify({"success": True})  # Redirect to dashboard
+            else:
+                # If password is incorrect
+                return jsonify({
+                    "success": False,
+                    "errors": {
+                        "password": "Invalid password"
+                    }
+                })
+        else:
+            # If user with the email doesn't exist
+            return jsonify({
+                "success": False,
+                "errors": {
+                    "email": "Invalid email"
+                }
+            })
 
     return render_template("login.html", form=form)
+
+
+
 
 
 @app.route("/logout", methods=["GET"])
@@ -84,23 +116,49 @@ def logout():
     return redirect(url_for("login"))
 
 
+
 @app.route("/register", methods=["POST", "GET"])
 def register():
     form = RegistrationForm()
-    if request.method == "POST" and form.validate_on_submit():
+
+    if request.method == "POST":
+        if not form.validate_on_submit():
+            errors = {field: ", ".join(messages) for field, messages in form.errors.items()}
+            return jsonify({"success": False, "errors": errors})  # Return errors in JSON
+
+        # Check if email or username already exists
+        email_exists = Register.query.filter_by(email=form.email.data).first()
+        username_exists = Register.query.filter_by(username=form.username.data).first()
+
+        errors = {}
+        if email_exists:
+            errors["email"] = "Email already taken."
+        if username_exists:
+            errors["username"] = "Username already taken."
+
+        if errors:
+            return jsonify({"success": False, "errors": errors})  # Return errors in JSON
+
+        # Hash password before storing in DB using Bcrypt's generate_password_hash
+        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+
         new_user = Register(
             email=form.email.data,
             first_name=form.first_name.data,
             last_name=form.last_name.data,
             username=form.username.data,
-            password=form.password.data
+            password=hashed_password
         )
+
         db.session.add(new_user)
         db.session.commit()
-        flash("Account created Successfully! <br>You can now log in.", "success")
-        return redirect(url_for("login"))
+
+        flash("Account created successfully! You can now log in.", "success")
+
+        return jsonify({"success": True, "redirect": url_for("login")})  # Return redirect URL
 
     return render_template("register.html", form=form)
+
 
 
 @app.route("/dashboard")
@@ -126,4 +184,4 @@ def join():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')
