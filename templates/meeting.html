@@ -1,10 +1,21 @@
+<!DOCTYPE html>
 <html>
 
 <head>
     <title>Meeting</title>
     <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+    <style>
+        #interpretation {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 10px;
+            z-index: 9999; /* Ensures it stays on top */
+        }
+    </style>
 </head>
-
 
 <body>
     <div id="root"></div>
@@ -13,58 +24,97 @@
             <button>Back to Dashboard</button>
         </a>
     </div>
-</body>
-<script src="https://unpkg.com/@zegocloud/zego-uikit-prebuilt/zego-uikit-prebuilt.js"></script>
-<script>
-window.onload = function () {
-    function getUrlParams(url) {
-        let urlStr = url.split('?')[1];
-        const urlSearchParams = new URLSearchParams(urlStr);
-        const result = Object.fromEntries(urlSearchParams.entries());
-        return result;
-    }
 
+    <div id="interpretation"></div>
 
-        // Generate a Token by calling a method.
-        // @param 1: appID
-        // @param 2: serverSecret
-        // @param 3: Room ID
-        // @param 4: User ID
-        // @param 5: Username
-    const roomID = getUrlParams(window.location.href)['roomID'] || (Math.floor(Math.random() * 10000) + "");
-    const userID = Math.floor(Math.random() * 10000) + "";
-    const userName = "{{username}}";
-    const appID = 421559096;
-    const serverSecret = "a92e02371bba3fdc080fa2d9207d67c8";
-    const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(appID, serverSecret, roomID, userID, userName);
+    <script src="https://unpkg.com/@zegocloud/zego-uikit-prebuilt/zego-uikit-prebuilt.js"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script>
+        window.onload = function() {
+            function getUrlParams(url) {
+                let urlStr = url.split('?')[1];
+                const urlSearchParams = new URLSearchParams(urlStr);
+                const result = Object.fromEntries(urlSearchParams.entries());
+                return result;
+            }
 
-    
-        const zp = ZegoUIKitPrebuilt.create(kitToken);
-        zp.joinRoom({
-            container: document.querySelector("#root"),
-            sharedLinks: [{
-                name: 'Personal link',
-                url: window.location.protocol + '//' + window.location.host  + window.location.pathname + '?roomID=' + roomID,
-            }],
-            scenario: {
-                mode: ZegoUIKitPrebuilt.VideoConference,
-            },
-                
-           	turnOnMicrophoneWhenJoining: true,
-           	turnOnCameraWhenJoining: true,
-           	showMyCameraToggleButton: true,
-           	showMyMicrophoneToggleButton: true,
-           	showAudioVideoSettingsButton: true,
-           	showScreenSharingButton: true,
-           	showTextChat: true,
-           	showUserList: true,
-           	maxUsers: 2,
-           	layout: "Auto",
-           	showLayoutButton: false,
-         
+            const roomID = getUrlParams(window.location.href)['roomID'] || (Math.floor(Math.random() * 10000) + "");
+            const userID = Math.floor(Math.random() * 10000) + "";
+            const userName = "{{username}}";
+            const appID = 421559096;
+            const serverSecret = "a92e02371bba3fdc080fa2d9207d67c8";
+            const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(appID, serverSecret, roomID, userID, userName);
+
+            const zp = ZegoUIKitPrebuilt.create(kitToken);
+            zp.joinRoom({
+                container: document.querySelector("#root"),
+                sharedLinks: [{
+                    name: 'Personal link',
+                    url: window.location.protocol + '//' + window.location.host + window.location.pathname + '?roomID=' + roomID,
+                }],
+                scenario: {
+                    mode: ZegoUIKitPrebuilt.VideoConference,
+                },
+                turnOnMicrophoneWhenJoining: true,
+                turnOnCameraWhenJoining: true,
+                showMyCameraToggleButton: true,
+                showMyMicrophoneToggleButton: true,
+                showAudioVideoSettingsButton: true,
+                showScreenSharingButton: true,
+                showTextChat: true,
+                showUserList: true,
+                maxUsers: 2,
+                layout: "Auto",
+                showLayoutButton: false,
             });
-}
-</script>
+
+            // Function to capture frames and send to Teachable Machine model
+            setInterval(() => {
+                const videoElement = document.querySelector('video');
+                if (videoElement) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = videoElement.videoWidth;
+                    canvas.height = videoElement.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                    const frame = canvas.toDataURL('image/jpeg').split(',')[1]; // Get base64 encoded image without prefix
+                    console.log('Captured frame:', frame);
+
+                    // Send frame to server for prediction
+                    fetch('http://127.0.0.1:5000/predict', { // Use your server URL here
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ frame })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Server response:', data);
+                        // Display interpretation
+                        document.getElementById('interpretation').innerText = data.interpretation;
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+                }
+            }, 1000); // Capture frames every second
+
+            // Connect to WebSocket server
+            const socket = io('http://127.0.0.1:5000'); // Use your server URL here
+
+            // Receive interpretation from server and display
+            socket.on('interpretation', function(data) {
+                console.log('Received interpretation:', data);
+                document.getElementById('interpretation').innerText = data.interpretation;
+            });
+        }
+    </script>
+</body>
 
 </html>
-

@@ -4,15 +4,28 @@ from wtforms import StringField, PasswordField, EmailField
 from wtforms.validators import DataRequired, Length
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import login_user, LoginManager, login_required, current_user, logout_user
-
 from flask_bcrypt import Bcrypt
+from flask_socketio import SocketIO, emit
+import cv2
+from cvzone.HandTrackingModule import HandDetector
+from cvzone.ClassificationModule import Classifier
+import numpy as np
+import base64
+import math
 
-
+# for model
+detector = HandDetector(maxHands=1)
+classifier = Classifier("/Users/USER/desktop/researchSeminar/Models/keras_model.h5", "/Users/USER/desktop/researchSeminar/Models/labels.txt")
+offset = 20
+imgSize = 300
+labels = ["Hello", "Thank You", "I Love You", "Yes", "Okay", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"]
 
 
 
 db = SQLAlchemy()
 app = Flask(__name__)
+socketio = SocketIO(app)
+
 app.config['SECRET_KEY'] = "my-secrets"
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///video-meeting.db"
 
@@ -183,5 +196,42 @@ def join():
     return render_template("join.html")
 
 
+@app.route('/predict', methods=['POST'])
+def predict():
+    data = request.get_json()
+    frame_data = data['frame']
+    nparr = np.fromstring(base64.b64decode(frame_data), np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+    hands, img = detector.findHands(img)
+    if hands:
+        hand = hands[0]
+        x, y, w, h = hand['bbox']
+        imgWhite = np.ones((imgSize, imgSize, 3), np.uint8) * 255
+        imgCrop = img[y - offset:y + h + offset, x - offset:x + w + offset]
+        aspectRatio = h / w
+
+        if aspectRatio > 1:
+            k = imgSize / h
+            wCal = math.ceil(k * w)
+            imgResize = cv2.resize(imgCrop, (wCal, imgSize))
+            wGap = math.ceil((imgSize - wCal) / 2)
+            imgWhite[:, wGap: wCal + wGap] = imgResize
+        else:
+            k = imgSize / w
+            hCal = math.ceil(k * h)
+            imgResize = cv2.resize(imgCrop, (imgSize, hCal))
+            hGap = math.ceil((imgSize - hCal) / 2)
+            imgWhite[hGap: hCal + hGap, :] = imgResize
+
+        prediction, index = classifier.getPrediction(imgWhite, draw=False)
+        interpretation = labels[index]
+        emit('interpretation', {'interpretation': interpretation}, broadcast=True, namespace='/')  # Broadcast interpretation to all clients
+    else:
+        interpretation = "No hands detected"
+
+    return jsonify({'interpretation': interpretation})
+
+
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0')
+    socketio.run(app, host='0.0.0.0', port=5000)

@@ -1,0 +1,17 @@
+0 Hello
+1 Thank You
+2 I Love You
+3 Yes
+4 Okay
+5 A
+6 B
+7 C
+8 D
+9 E
+10 F
+11 G
+12 H
+13 I
+14 J
+15 K
+16 L
