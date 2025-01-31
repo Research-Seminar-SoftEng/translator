@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock title %}
+{% block content %}
+
+<div class="text-white p-8">
+    <main class="container mx-auto max-w-3xl">
+        <!-- Back Button -->
+        <div class="container-bg p-8 rounded-2xl">
+            <button onclick="history.back()" class="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 text-lg font-medium">
+                <span class="text-xl">←</span> Back to Dashboard
+            </button>
+        </div>
+
+        <!-- Profile Section -->
+        <div class="container-bg p-8 rounded-2xl">
+            <!-- Profile Picture -->
+            <div class="profile-upload mb-8">
+                <form id="profileForm" enctype="multipart/form-data">
+                    <label for="profile-pic" class="cursor-pointer block">
+                        <div class="w-[150px] h-[150px] rounded-full bg-emerald-800/30 border-2 border-emerald-600/30 flex items-center justify-center overflow-hidden">
+                            <img id="preview-image" src="{{ url_for('static', filename='uploads/' + current_user.profile_picture) if current_user.profile_picture else '/api/placeholder/150/150' }}" alt="Profile" class="w-full h-full object-cover">
+                        </div>
+                        <div class="upload-overlay rounded-full">
+                            <span class="text-white text-sm">Upload Photo</span>
+                        </div>
+                    </label>
+                    <input type="file" id="profile-pic" name="profile_pic" class="hidden" accept="image/*">
+                </form>
+            </div>
+
+             <!-- Profile Forms -->
+             <div class="space-y-6">
+                <!-- Personal Information -->
+                <div class="container-bg p-6 rounded-xl">
+                    <h2 class="text-xl font-semibold text-emerald-400 mb-4">Personal Information</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-300 mb-2">First Name</label>
+                            <input type="text" value="{{ current_user.first_name }}" disabled 
+                                   class="w-full bg-emerald-900/20 border border-emerald-600/30 rounded-lg p-3 text-white focus:outline-none cursor-not-allowed opacity-50">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-300 mb-2">Last Name</label>
+                            <input type="text" value="{{ current_user.last_name }}" disabled 
+                                   class="w-full bg-emerald-900/20 border border-emerald-600/30 rounded-lg p-3 text-white focus:outline-none cursor-not-allowed opacity-50">
+                        </div>
+                    </div>
+                </div>
+
+            <!-- Account Settings -->
+            <div class="container-bg p-6 rounded-xl">
+                <h2 class="text-xl font-semibold text-emerald-400 mb-4">Account Settings</h2>
+                <form id="updateForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-300 mb-2">Username</label>
+                        <input type="text" id="username" name="username" value="{{ current_user.username }}" class="w-full bg-emerald-900/20 border border-emerald-600/30 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-300 mb-2">Email Address</label>
+                        <input type="email" id="email" name="email" value="{{ current_user.email }}" class="w-full bg-emerald-900/20 border border-emerald-600/30 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <button type="submit" class="custom-button px-6 py-2 rounded-lg">Update Account Settings</button>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    document.getElementById("profile-pic").addEventListener("change", function (e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById("preview-image").src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+
+            // Auto-upload profile picture
+            const formData = new FormData();
+            formData.append("profile_pic", file);
+
+            fetch("/profile", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Profile picture updated successfully!");
+                    window.location.reload();
+                } else {
+                    alert("Error updating profile picture: " + data.error);
+                }
+            })
+            .catch(error => {
+                alert("Request failed: " + error);
+            });
+        }
+    });
+
+    // Update username and email
+    document.getElementById("updateForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+
+        fetch("/profile", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert("Profile updated successfully!");
+                window.location.reload();
+            } else {
+                alert("Error updating profile: " + data.error);
+            }
+        })
+        .catch(error => {
+            alert("Request failed: " + error);
+            console.log(error);
+        });
+    });
+</script>
+
+
+{% endblock content %}

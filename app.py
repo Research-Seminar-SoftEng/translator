@@ -4,8 +4,11 @@ from wtforms import StringField, PasswordField, EmailField
 from wtforms.validators import DataRequired, Length
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import login_user, LoginManager, login_required, current_user, logout_user
-
+from werkzeug.utils import secure_filename
 from flask_bcrypt import Bcrypt
+import os
+from flask_migrate import Migrate
+
 
 
 
@@ -19,6 +22,23 @@ app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///video-meeting.db"
 # Initialize Bcrypt
 bcrypt = Bcrypt(app)
 db.init_app(app)
+migrate = Migrate(app, db)
+
+UPLOAD_FOLDER = "static/uploads"
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
+
+# Ensure upload folder exists
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+    
+    
+
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
 
 login_manager = LoginManager()
 login_manager.login_view = "login"
@@ -37,6 +57,8 @@ class Register(db.Model):
     last_name = db.Column(db.String(50), nullable=False)
     username = db.Column(db.String(20), unique=True, nullable=False)
     password = db.Column(db.String(128), nullable=False)
+    profile_picture = db.Column(db.String(100), nullable=True)  # New field
+
 
     def is_active(self):
         return True
@@ -50,6 +72,8 @@ class Register(db.Model):
 
 with app.app_context():
     db.create_all()
+    
+    
 
 
 class RegistrationForm(FlaskForm):
@@ -164,8 +188,53 @@ def register():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    return render_template("dashboard.html", first_name=current_user.first_name, last_name=current_user.last_name)
+    return render_template("dashboard.html", first_name=current_user.first_name, last_name=current_user.last_name,profile_picture=current_user.profile_picture)
 
+
+
+@app.route("/profile")
+@login_required
+def profile():
+    return render_template("profile.html", first_name=current_user.first_name, last_name=current_user.last_name , username=current_user.username, email=current_user.email)
+
+
+
+
+
+
+@app.route("/profile", methods=["GET", "POST"])
+@login_required
+def update_profile():
+    user = db.session.get(Register, current_user.id)  
+
+
+    if request.method == "POST":
+        try:
+            # Check if a file is uploaded
+            if "profile_pic" in request.files:
+                profile_pic = request.files["profile_pic"]
+                if profile_pic and allowed_file(profile_pic.filename):
+                    filename = secure_filename(profile_pic.filename)
+                    filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+                    profile_pic.save(filepath)
+                    user.profile_picture = filename  # Save filename in DB
+
+            # Handle text updates (username, email)
+            new_username = request.form.get("username")
+            new_email = request.form.get("email")
+
+            if new_username:
+                user.username = new_username
+            if new_email:
+                user.email = new_email
+
+            db.session.commit()
+            return jsonify({"success": True})
+
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 400
+
+    return render_template("profile.html", current_user=current_user)
 
 @app.route("/meeting")
 @login_required
